@@ -140,11 +140,11 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObse
         scramble(e.target, 120);
       }
     }, { rootMargin: '0px 0px -20% 0px' });
-    document.querySelectorAll('main section > h2 span, .design-case h3, .online-project h3, .about-services article h3, footer strong').forEach(h => io.observe(h));
+    document.querySelectorAll('main section > h2 span, footer strong').forEach(h => io.observe(h));
   }
 
   /* Hover кезінде: сілтеме/батырма мәтіні қысқа «толқындық» scramble жасайды */
-  const hoverTargets = 'header nav a, .contact-links a span, .site-footer a, .preview-link span, .gallery-open, .copy-chip, .button';
+  const hoverTargets = 'header nav a, .contact-links a span, .site-footer a, .copy-chip, .button';
   for (const el of document.querySelectorAll(hoverTargets)) {
     el.addEventListener('pointerenter', () => {
       if (el._scratching) return;
