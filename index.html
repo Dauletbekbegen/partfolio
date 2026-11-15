@@ -278,7 +278,19 @@ nav a:hover::before,nav a.active::before{opacity:1}
 .hero .button{animation-delay:.3s}
 .ticker{animation-delay:.4s}
 nav a:hover{animation:floatText .9s ease-in-out infinite}
-@media(prefers-reduced-motion:reduce){body::before,body::after,.hero::before,.hero::after,.button::before,.float-card,.hero h1,.hero p,.hero .button,.ticker,.design-case,.online-project,.about-services article,.contact-links a,.order-panel,#about > p,.site-footer,.brand,.languages,nav a{animation:none}.button,.brand,.chip,.gallery-open,.contact-links a,.design-case,.online-project,.order-panel,.about-services article{transition:none}.js .reveal,.design-case,.online-project,.about-services article,.contact-links a,.order-panel,#about > p{opacity:1;transform:none;filter:none;animation:none}}</style>
+@media(prefers-reduced-motion:reduce){body::before,body::after,.hero::before,.hero::after,.button::before,.float-card,.hero h1,.hero p,.hero .button,.ticker,.design-case,.online-project,.about-services article,.contact-links a,.order-panel,#about > p,.site-footer,.brand,.languages,nav a{animation:none}.button,.brand,.chip,.gallery-open,.contact-links a,.design-case,.online-project,.order-panel,.about-services article{transition:none}.js .reveal,.design-case,.online-project,.about-services article,.contact-links a,.order-panel,#about > p{opacity:1;transform:none;filter:none;animation:none}}
+
+/* === abhishekjha.me стилі: cursor-жолбарыш + мәтіндік морфинг === */
+html.cursor-mode,html.cursor-mode *{cursor:none !important}
+.cursor-dot,.cursor-ring{position:fixed;top:0;left:0;z-index:9999;pointer-events:none;border-radius:50%;display:none;will-change:transform}
+.cursor-dot{width:8px;height:8px;margin:-4px 0 0 -4px;background:var(--accent)}
+.cursor-ring{width:38px;height:38px;margin:-19px 0 0 -19px;border:1.5px solid var(--ink);transition:width .25s,height .25s,margin .25s,background-color .25s,border-color .25s,opacity .25s}
+html.cursor-hot .cursor-ring{width:64px;height:64px;margin:-32px 0 0 -32px;background:rgba(217,72,31,.12);border-color:var(--accent)}
+html.cursor-down .cursor-dot,html.cursor-down .cursor-ring{opacity:.45}
+.scramble-char{display:inline-block;white-space:pre;will-change:transform,opacity}
+.scramble-glitch{color:var(--accent);opacity:.85}
+@media(hover:hover) and (pointer:fine){.cursor-dot,.cursor-ring{display:block}}
+@media(prefers-reduced-motion:reduce){.cursor-dot,.cursor-ring{display:none !important}html.cursor-mode,html.cursor-mode *{cursor:auto !important}}</style>
 <body id="top"><div class="scroll-progress" aria-hidden="true"></div><div class="vector-layer" aria-hidden="true">
   <div class="float-card card-one"></div>
   <div class="float-card card-two"></div>
@@ -459,4 +471,124 @@ orderForm.addEventListener('submit', event => {
   };
   setScrollShift();
   addEventListener('scroll', setScrollShift, { passive: true });
+})();</script><script>
+/* === abhishekjha.me стиліне ұқсас анимациялар ===
+   1) Cursor-жолбарыш: нүкте + кешігу сақинасы, hover-де үлкейеді
+   2) Scramble/морфинг: тақырыптар мен сілтемелер мәтіні символдар араласып «шырайдан» ашылады */
+(() => {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const glyphs = 'ABCDEFGHIJKLMNOPQRSTUVWXYZабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789#%&@*<>/\\';
+
+  /* ---------- 1. Cursor ---------- */
+  if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
+    const dot = document.createElement('div'); dot.className = 'cursor-dot';
+    const ring = document.createElement('div'); ring.className = 'cursor-ring';
+    document.body.append(dot, ring);
+    document.documentElement.classList.add('cursor-mode');
+    let mx = innerWidth / 2, my = innerHeight / 2, rx = mx, ry = my, started = false;
+    addEventListener('pointermove', e => {
+      mx = e.clientX; my = e.clientY;
+      if (!started) { rx = mx; ry = my; started = true; }
+      dot.style.transform = 'translate3d(' + mx + 'px,' + my + 'px,0)';
+    }, { passive: true });
+    addEventListener('pointerdown', () => document.documentElement.classList.add('cursor-down'));
+    addEventListener('pointerup', () => document.documentElement.classList.remove('cursor-down'));
+    const hotSel = 'a,button,.chip,input,textarea,select,dialog,.design-case,.online-project,[data-tilt]';
+    addEventListener('pointerover', e => {
+      if (e.target.closest && e.target.closest(hotSel)) document.documentElement.classList.add('cursor-hot');
+    });
+    addEventListener('pointerout', e => {
+      if (e.target.closest && e.target.closest(hotSel) && !(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(hotSel)))
+        document.documentElement.classList.remove('cursor-hot');
+    });
+    (function loop() {
+      rx += (mx - rx) * 0.16; ry += (my - ry) * 0.16;
+      ring.style.transform = 'translate3d(' + rx.toFixed(2) + 'px,' + ry.toFixed(2) + 'px,0)';
+      requestAnimationFrame(loop);
+    })();
+  }
+
+  /* ---------- 2. Scramble / мәтін морфингі ---------- */
+  function scramble(el, delay) {
+    if (el.dataset.scrambling === '1') return;   // қайта бастаудан қорғау
+    // Тіл ауысқанда аударма түйіндері ескірген span-дарды жоюы мүмкін — оларды тазартамыз
+    if (el._scrambleSpans) for (const n of el._scrambleSpans) if (!n.isConnected) n.remove();
+    el.dataset.scrambling = '1';
+    const finalText = el.dataset.scrambleFinal || el.textContent;
+    el.dataset.scrambleFinal = finalText;
+    const chars = [...finalText];
+    const frag = document.createDocumentFragment();
+    const spans = chars.map(ch => {
+      const s = document.createElement('span');
+      s.className = 'scramble-char';
+      s.textContent = ch;
+      frag.append(s);
+      return s;
+    });
+    el.textContent = '';
+    el.append(frag);
+    el._scrambleSpans = spans;
+    setTimeout(() => {
+      const settleStart = performance.now();
+      const perChar = 34;          // әр символдың басталу кезеңі (мс)
+      const glitchTime = 420;      // бір символдың «шырайлау» уақыты
+      let raf;
+      const tick = now => {
+        const t = now - settleStart;
+        let pending = false;
+        for (let i = 0; i < spans.length; i++) {
+          const s = spans[i], orig = chars[i];
+          if (/\s/.test(orig)) continue;
+          const local = t - i * perChar;
+          if (local >= glitchTime) { if (!s.isConnected) continue; s.textContent = orig; s.classList.remove('scramble-glitch'); continue; }
+          pending = true;
+          if (local > 0) {
+            s.textContent = glyphs[(Math.random() * glyphs.length) | 0];
+            s.classList.add('scramble-glitch');
+          } else {
+            s.textContent = glyphs[(Math.random() * glyphs.length) | 0];
+            s.style.opacity = '0.25';
+          }
+        }
+        if (pending) raf = requestAnimationFrame(tick);
+        else { for (let k = 0; k < spans.length; k++) { const s = spans[k]; if (!s.isConnected) continue; s.textContent = chars[k]; s.style.opacity = ''; s.classList.remove('scramble-glitch'); } el.dataset.scrambling = '0'; delete el._scrambleSpans; cancelAnimationFrame(raf); }
+      };
+      raf = requestAnimationFrame(tick);
+    }, delay || 0);
+  }
+
+  /* Мәтіндік түйіндерді ғана ал (SVG/иконкаларды scramble-темеу үшін) */
+  function textNodes(el) {
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), out = [];
+    while (w.nextNode()) if (w.currentNode.textContent.trim()) out.push(w.currentNode);
+    return out;
+  }
+  /* Бет ашылғанда: hero тақырыбы, тіккер және навигация шырайдан ашылады */
+  const heroH1 = document.querySelector('.hero h1');
+  if (heroH1) scramble(heroH1, 250);
+  document.querySelectorAll('header nav a').forEach((a, i) => scramble(a, 400 + i * 90));
+  document.querySelectorAll('.ticker span, .ticker-track > *').forEach((s, i) => scramble(s, 600 + (i % 8) * 70));
+
+  /* Скролл кезінде: section тақырыптары көрінгенде морфингпен ашылады */
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        io.unobserve(e.target);
+        scramble(e.target, 120);
+      }
+    }, { rootMargin: '0px 0px -20% 0px' });
+    document.querySelectorAll('main section > h2 span, .design-case h3, .online-project h3, .about-services article h3, footer strong').forEach(h => io.observe(h));
+  }
+
+  /* Hover кезінде: сілтеме/батырма мәтіні қысқа «толқындық» scramble жасайды */
+  const hoverTargets = 'header nav a, .contact-links a span, .site-footer a, .preview-link span, .gallery-open, .copy-chip, .button';
+  for (const el of document.querySelectorAll(hoverTargets)) {
+    el.addEventListener('pointerenter', () => {
+      if (el._scratching) return;
+      el._scratching = true;
+      scramble(el, 0);
+      setTimeout(() => { el._scratching = false; }, 700);
+    });
+  }
 })();</script></body></html>
